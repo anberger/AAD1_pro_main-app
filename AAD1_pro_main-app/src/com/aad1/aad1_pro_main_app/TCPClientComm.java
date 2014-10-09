@@ -8,8 +8,10 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
@@ -17,6 +19,7 @@ public class TCPClientComm implements Runnable {
 	public Socket SOCK = null;
 	public boolean connected = false;
 	private static String TAG = "ServerActivity";
+	public Handler mHandler;
 	
 	public void setSocket(Socket sock){
 		this.SOCK = sock;
@@ -30,10 +33,10 @@ public class TCPClientComm implements Runnable {
 		try {
 			out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(SOCK.getOutputStream())), true);
 			out.println(message);
+			out.flush();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-      
 	}
 	
 	public void run() {
@@ -42,45 +45,28 @@ public class TCPClientComm implements Runnable {
 				BufferedReader in = new BufferedReader(new InputStreamReader(SOCK.getInputStream()));
 				String line = null;
 				while ((line = in.readLine()) != null) {
-                  Log.d("ServerActivity", line);
-                  threadMsg(line);
-              }
+                  Log.d(TAG, line);
+				}
+				
+				if(!SOCK.isConnected() || SOCK.isClosed() || !SOCK.isBound()){
+					Log.d(TAG,"Client left");
+					this.connected = false;
+				}
 			}
 			
 		} catch(Exception X){
-			Log.d(TAG, X.toString());
+			try {
+				Log.d(TAG,"Client");
+				SOCK.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+				Log.d(TAG,e.toString());
+			}finally{
+				Log.d(TAG,"Client left");
+			}
 		} finally{
-			
+			Log.d(TAG,"kick him out");
 		}
 	};
-	
-	private void threadMsg(String msg) {
-		 
-        if (!msg.equals(null) && !msg.equals("")) {
-            Message msgObj = handler.obtainMessage();
-            Bundle b = new Bundle();
-            b.putString("message", msg);
-            msgObj.setData(b);
-            handler.sendMessage(msgObj);
-        }
-    }
-
-    // Define the Handler that receives messages from the thread and update the progress
-    private final Handler handler = new Handler() {
-
-        public void handleMessage(Message msg) {
-             
-            String aResponse = msg.getData().getString("message");
-
-            if ((null != aResponse)) {
-            	Log.d(TAG,"got a response from client");
-            }
-            else
-            {
-            	Log.d(TAG,"Got nothing");
-            }    
-
-        }
-    };
 }
 
