@@ -4,25 +4,73 @@
     android:layout_height="match_parent"
     android:orientation="vertical" >
 
-    <TextView
-        android:id="@+id/txt_response"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Response Text"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
+    <ListView
+        android:id="@+id/listView1"
+        android:layout_width="match_parent"
+        android:layout_height="206dp"
+        android:layout_weight="17.71"
+        android:clickable="false" >
 
-    <TextView
-        android:id="@+id/txt_ip"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="device ip"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
+    </ListView>
 
     <Button
         android:id="@+id/button1"
-        android:layout_width="wrap_content"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:onClick="clicker"
-        android:text="Button" />
+        android:onClick="clearList"
+        android:layout_weight="0.17"
+        android:text="@string/txt_clear" />
+
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="1dip"
+        android:background="#000000" />
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="22dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="15dp" >
+
+        <TextView
+            android:id="@+id/label_IP"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="70"
+            android:text="@string/txt_ip_address" />
+
+        <TextView
+            android:id="@+id/deviceIP"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="30"
+            android:text=""
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="22dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginBottom="15dp" >
+
+        <TextView
+            android:id="@+id/label_localPort"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="70"
+            android:text="@string/txt_local_port" />
+
+        <TextView
+            android:id="@+id/localPort"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="30"
+            android:text=""
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+    </LinearLayout>
 
 </LinearLayout>

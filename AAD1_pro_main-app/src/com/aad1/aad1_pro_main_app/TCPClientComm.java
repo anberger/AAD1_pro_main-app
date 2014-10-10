@@ -7,29 +7,55 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
-
-import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
-public class TCPClientComm implements Runnable {
+public class TCPClientComm extends Thread {
 	public Socket SOCK = null;
 	public boolean connected = false;
 	private static String TAG = "ServerActivity";
-	public Handler mHandler;
+	private PrintWriter out;
 	
+	// Constants for identification of the message
+	public String CLIENTID = ""; 
+	public static final int CLIENTMSG = 1;
+	public static final int CLIENTLEFT = 2;
+	public static final int ERROR = 3;
+	
+	// Output Handler
+	Bundle bundle = new Bundle();
+	private Handler outHandler; 
+	
+	// Setter Methods
+	public TCPClientComm(Handler mHandler) {
+        outHandler = mHandler;
+    }
 	public void setSocket(Socket sock){
 		this.SOCK = sock;
 	}
 	public void setConnected(boolean value){
 		this.connected = value;
 	}
+	public void setClientID(String id){
+		this.CLIENTID = id;
+	}
 	
+	// This Method sends Data to the TCP Server Class
+	private void send2TCPServer(int type, String message){
+        Message msg = outHandler.obtainMessage(); 
+        bundle.putString("ID",CLIENTID);
+        bundle.putInt("TYPE", type);
+        bundle.putString("MSG", message);
+        
+        msg.setData(bundle);
+        outHandler.sendMessage(msg);
+    }
+
+	// Send Data to Client
 	public void send(String message){
-		PrintWriter out;
 		try {
 			out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(SOCK.getOutputStream())), true);
 			out.println(message);
@@ -39,33 +65,45 @@ public class TCPClientComm implements Runnable {
 		}
 	}
 	
+	// Run Method
 	public void run() {
 		try {
+			Looper.prepare();
+			
+			// Set IP as identifier
+			setClientID(SOCK.getInetAddress().toString());
+			
 			while(connected){
+				
+				
+				// Read Inputstream
 				BufferedReader in = new BufferedReader(new InputStreamReader(SOCK.getInputStream()));
 				String line = null;
+				
+				// If there are messages available send them to TCPServer
 				while ((line = in.readLine()) != null) {
-                  Log.d(TAG, line);
+                  send2TCPServer(CLIENTMSG,line);
 				}
 				
+				// Check connection
 				if(!SOCK.isConnected() || SOCK.isClosed() || !SOCK.isBound()){
-					Log.d(TAG,"Client left");
 					this.connected = false;
 				}
 			}
 			
 		} catch(Exception X){
+			Looper.myLooper().quit();
 			try {
-				Log.d(TAG,"Client");
+				send2TCPServer(ERROR,"Client left unexpected");
 				SOCK.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 				Log.d(TAG,e.toString());
 			}finally{
-				Log.d(TAG,"Client left");
 			}
 		} finally{
-			Log.d(TAG,"kick him out");
+			send2TCPServer(CLIENTLEFT,"Client left normally");
+			Looper.myLooper().quit();
 		}
 	};
 }

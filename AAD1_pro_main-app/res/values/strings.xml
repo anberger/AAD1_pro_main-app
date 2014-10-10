@@ -3,5 +3,8 @@
 
     <string name="app_name">AAD1_pro_main-app</string>
     <string name="hello_world">Hello world!</string>
+    <string name="txt_ip_address">IP Adresse</string>
+    <string name="txt_local_port">Local Port</string>
+    <string name="txt_clear">Clear List</string>
 
 </resources>

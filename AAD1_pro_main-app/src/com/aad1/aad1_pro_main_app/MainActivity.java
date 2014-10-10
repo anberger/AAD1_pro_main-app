@@ -4,8 +4,9 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteOrder;
-
-//import com.aad1.aad1_pro_main_app.TCPServerService.ServerThread;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -20,24 +21,32 @@ import android.os.Message;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class MainActivity extends Activity {
-	
-	TextView txt_resp = null;
-	TextView txt_ip = null;
-	Intent serviceIntent;
 	private static String TAG = "ServerActivity";
+	TextView txt_port = null;
+	TextView txt_ip = null;
+	ListView list = null;
+	ArrayList<String> logList = null;
+	private int listenerPort = 6000;
 	
 	private TCPServer mTCPServer;   
 	Bundle  bundle = new Bundle(); 
 	
+	@SuppressLint("HandlerLeak") 
 	public Handler mHandler = new Handler(){   //handles the INcoming msgs 
         @Override public void handleMessage(Message msg) 
         {     
         	bundle = msg.getData();
-            Toast.makeText(getApplicationContext(), bundle.getString("message2activity"), Toast.LENGTH_SHORT).show(); 
+        	
+        	if(bundle.containsKey("MSG")){
+	            logList.add(bundle.getString("MSG"));
+	            Log.d(TAG,bundle.getString("MSG"));
+	            updateList();
+        	}
         } 
     };
 
@@ -45,15 +54,45 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-     	LocalBroadcastManager.getInstance(this).registerReceiver(MessageReceiver,new IntentFilter("message"));
-     	txt_resp = (TextView)findViewById(R.id.txt_response);
-     	txt_ip = (TextView)findViewById(R.id.txt_ip);
+     	txt_ip = (TextView)findViewById(R.id.deviceIP);
+     	txt_port = (TextView)findViewById(R.id.localPort);
+     	list = (ListView)findViewById(R.id.listView1);
+     	txt_ip.setText(wifiIpAddress(getApplicationContext())); 
+        txt_port.setText(String.valueOf(this.listenerPort));
      	
-     	mTCPServer = new TCPServer(mHandler);
-     	mTCPServer.start();
-        
-        txt_ip.setText(wifiIpAddress(getApplicationContext()));      
-        
+     	if(savedInstanceState == null){
+	     	// TCP Server Connection
+	     	mTCPServer = new TCPServer(mHandler);
+	     	mTCPServer.setPort(listenerPort);
+	     	mTCPServer.start();
+	     	logList = new ArrayList<String>();
+     	}
+     	else {
+     		logList = savedInstanceState.getStringArrayList("logList");
+     	}
+     	updateList();
+    } 
+    
+    @Override
+	protected void onSaveInstanceState(Bundle outState) {
+		// TODO Auto-generated method stub
+    	outState.putStringArrayList("logList", logList);
+		super.onSaveInstanceState(outState);
+	}
+    
+    public void clearList(View view){
+    	logList.removeAll(logList);
+    	ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1, logList);
+    	
+    	// Set The Adapter
+    	this.list.setAdapter(arrayAdapter); 
+    }
+
+	private void updateList(){
+    	ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1, logList);
+    	
+    	// Set The Adapter
+    	this.list.setAdapter(arrayAdapter); 
     }
     
     public void clicker(View view){
@@ -62,16 +101,6 @@ public class MainActivity extends Activity {
         msg.setData(bundle);
         mTCPServer.getHandler().sendMessage(msg);
 	};
-
-    
- // Our handler for received Intents. This will be called whenever an Intent sends an action
- 	private BroadcastReceiver MessageReceiver = new BroadcastReceiver() {
- 		@Override
- 		public void onReceive(Context context, Intent intent) {
- 			String data = intent.getStringExtra("data");
- 			txt_resp.setText(data);
- 		}
- 	};
  	
  	protected String wifiIpAddress(Context context) {
  	    WifiManager wifiManager = (WifiManager) context.getSystemService(WIFI_SERVICE);
@@ -93,5 +122,5 @@ public class MainActivity extends Activity {
  	    }
 
  	    return ipAddressString;
- 	}
+ 	} 	
 }
