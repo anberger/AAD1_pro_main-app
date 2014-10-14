@@ -71,7 +71,7 @@ public class TCPClientComm extends Thread {
 			Looper.prepare();
 			
 			// Set IP as identifier
-			setClientID(SOCK.getInetAddress().toString());
+			setClientID(SOCK.getInetAddress().toString().replace("/", ""));
 			
 			while(connected){
 				

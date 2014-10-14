@@ -1,10 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">AAD1_pro_main-app</string>
+    <string name="app_name">mobile tracking car </string>
     <string name="hello_world">Hello world!</string>
     <string name="txt_ip_address">IP Adresse</string>
     <string name="txt_local_port">Local Port</string>
     <string name="txt_clear">Clear List</string>
+    <string name="title_activity_start_screen">StartScreen</string>
+    <string name="txt_loading_data">Loading Data</string>
+    <string name="txt_waiting_clients">Waiting for clients</string>
+    <string name="txt_logo">project logo</string>
+    <string name="txt_tcp_start">Start Application</string>
+    <string name="txt_port_label">"Listening on port: "</string>
+    <string name="txt_ip_label">"Local IP Address: "</string>
+    <string name="txt_img_con_car">This is the connection image of the car</string>
+    <string name="txt_img_con_video">This is the connection image of the video</string>
+    <string name="txt_img_con_gps">This is the connection image of the GPS</string>
+    <string name="txt_img_con_start">Start button of the Application</string>
 
 </resources>

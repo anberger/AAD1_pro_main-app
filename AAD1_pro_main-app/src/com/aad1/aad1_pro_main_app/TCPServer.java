@@ -76,7 +76,7 @@ public class TCPServer extends Thread {
 					mTCPClientComm.start();
 					
 					TCPServer.Clients.add(mTCPClientComm);
-					SendBroadCast("new Client arrived with IP: " + ipAddress);
+					//SendBroadCast("new Client arrived with IP: " + ipAddress);
 				}
 			}
 		} catch(Exception X){

@@ -5,50 +5,32 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
-import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
-import android.support.v4.content.LocalBroadcastManager;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainActivity extends Activity {
+	@SuppressWarnings("unused")
 	private static String TAG = "ServerActivity";
 	TextView txt_port = null;
 	TextView txt_ip = null;
 	ListView list = null;
-	ArrayList<String> logList = null;
 	private int listenerPort = 6000;
-	
-	private TCPServer mTCPServer;   
-	Bundle  bundle = new Bundle(); 
-	
-	@SuppressLint("HandlerLeak") 
-	public Handler mHandler = new Handler(){   //handles the INcoming msgs 
-        @Override public void handleMessage(Message msg) 
-        {     
-        	bundle = msg.getData();
-        	
-        	if(bundle.containsKey("MSG")){
-	            logList.add(bundle.getString("MSG"));
-	            Log.d(TAG,bundle.getString("MSG"));
-	            updateList();
-        	}
-        } 
-    };
+	ArrayList<String> logList = null;
+	TCPService mService;
+    boolean mBound = false;
+    ArrayAdapter<String> arrayAdapter = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,17 +42,13 @@ public class MainActivity extends Activity {
      	txt_ip.setText(wifiIpAddress(getApplicationContext())); 
         txt_port.setText(String.valueOf(this.listenerPort));
      	
-     	if(savedInstanceState == null){
-	     	// TCP Server Connection
-	     	mTCPServer = new TCPServer(mHandler);
-	     	mTCPServer.setPort(listenerPort);
-	     	mTCPServer.start();
-	     	logList = new ArrayList<String>();
-     	}
-     	else {
-     		logList = savedInstanceState.getStringArrayList("logList");
-     	}
-     	updateList();
+        if(savedInstanceState == null){
+        	logList = new ArrayList<String>();
+        }
+        else {
+        	logList = savedInstanceState.getStringArrayList("logList");
+        }
+        updateList();
     } 
     
     @Override
@@ -78,30 +56,66 @@ public class MainActivity extends Activity {
 		// TODO Auto-generated method stub
     	outState.putStringArrayList("logList", logList);
 		super.onSaveInstanceState(outState);
+	}    
+ 
+    @Override
+	protected void onResume() {
+	    super.onResume();
+	    Intent intent= new Intent(this, TCPService.class);
+	    bindService(intent, mConnection,
+	        Context.BIND_AUTO_CREATE);
 	}
     
+    @Override
+    protected void onPause() {
+    	super.onPause();
+    	if(mBound){
+    		unbindService(mConnection);
+    	}
+	}    
+    
+    private ServiceConnection mConnection = new ServiceConnection() {
+
+	    public void onServiceConnected(ComponentName className, 
+	        IBinder binder) {
+	    	TCPService.TCPBinder b = (TCPService.TCPBinder) binder;
+	    	mService = b.getService();
+	    	Toast.makeText(MainActivity.this, "Connected", Toast.LENGTH_SHORT)
+	          .show();
+	    	mBound = true;
+	    }
+
+	    public void onServiceDisconnected(ComponentName className) {
+	    	mService= null;
+	    	mBound = false;
+	    }
+	  };
+    
+    
+    // ListView Updates
+    
     public void clearList(View view){
+    	startService(new Intent(MainActivity.this, TCPService.class));
     	logList.removeAll(logList);
-    	ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1, logList);
+    	arrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1, logList);
     	
     	// Set The Adapter
     	this.list.setAdapter(arrayAdapter); 
     }
 
 	private void updateList(){
-    	ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1, logList);
+    	arrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1, logList);
     	
     	// Set The Adapter
     	this.list.setAdapter(arrayAdapter); 
     }
     
     public void clicker(View view){
-    	Message msg = mTCPServer.getHandler().obtainMessage(); 
-    	bundle.putString("message2thread", "Männer figt euch doch");
-        msg.setData(bundle);
-        mTCPServer.getHandler().sendMessage(msg);
+    	
 	};
  	
+	// Getting the IP Address of the device
+	
  	protected String wifiIpAddress(Context context) {
  	    WifiManager wifiManager = (WifiManager) context.getSystemService(WIFI_SERVICE);
  	    int ipAddress = wifiManager.getConnectionInfo().getIpAddress();
