@@ -1,21 +1,25 @@
 package com.aad1.aad1_pro_main_app;
 
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.content.LocalBroadcastManager;
+import android.widget.Toast;
 
 /*
  * Activity TCPConnectionActivity 
  * This Activity gets called when the APP is launching at the first time.
  */
 
-public class TCPConnectionActivity extends FragmentActivity implements FragmentStartServer.FragmentCommunicator {
+public class ActivityTCPConnector extends FragmentActivity implements FragmentStartServer.FragmentCommunicator {
 
-	TCPService mService;
+	ServiceTCP mService;
     boolean mBound = false;
     private String listenerPort = "6000";
 	private Helper helper;
@@ -25,6 +29,8 @@ public class TCPConnectionActivity extends FragmentActivity implements FragmentS
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_tcp_connection);
+		
+		LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter("messages"));
 		
 		if(savedInstanceState == null){
 			fragLogo();
@@ -37,15 +43,24 @@ public class TCPConnectionActivity extends FragmentActivity implements FragmentS
 		}
 	}
 	
-	
-	
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
 		// TODO Auto-generated method stub
 		outState.putBooleanArray("modes", modes);
 		super.onSaveInstanceState(outState);
 	}
-
+	
+	private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+	    @Override
+	    public void onReceive(Context context, Intent intent) {
+	        Toast.makeText(getApplicationContext(), intent.getStringExtra("MSG"), Toast.LENGTH_SHORT).show();
+	    }
+	};
+	
+	/*
+	 * Loading Functions for the Fragments
+	 */
+	
 	private void fragLoading(){
 		if (findViewById(R.id.frame_up) != null) {
             FragmentLoading frag = new FragmentLoading();
@@ -57,7 +72,7 @@ public class TCPConnectionActivity extends FragmentActivity implements FragmentS
 	private void fragClients(boolean[] modes){
 		
 		String[] settings = new String[2];
-		settings[0] = helper.getIPAddress(true);
+		settings[0] = helper.getIPAddress();
 		settings[1] = this.listenerPort;
 		
 		if (findViewById(R.id.frame_down) != null) {
@@ -83,7 +98,6 @@ public class TCPConnectionActivity extends FragmentActivity implements FragmentS
             getSupportFragmentManager().beginTransaction().replace(R.id.frame_down, frag).commit();
         }
 	}
-
 	
 	/*
 	 * @see android.app.Activity#onResume() 	
@@ -93,7 +107,7 @@ public class TCPConnectionActivity extends FragmentActivity implements FragmentS
 	@Override
 	protected void onResume() {
 	    super.onResume();
-	    Intent intent= new Intent(this, TCPService.class);
+	    Intent intent= new Intent(this, ServiceTCP.class);
 	    bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 	}	
 	
@@ -104,7 +118,7 @@ public class TCPConnectionActivity extends FragmentActivity implements FragmentS
 	private ServiceConnection mConnection = new ServiceConnection() {
 	    public void onServiceConnected(ComponentName className, 
 	        IBinder binder) {
-	    	TCPService.TCPBinder b = (TCPService.TCPBinder) binder;
+	    	ServiceTCP.TCPBinder b = (ServiceTCP.TCPBinder) binder;
 	    	mService = b.getService();
 	    	mBound = true;
 	    }
@@ -130,10 +144,13 @@ public class TCPConnectionActivity extends FragmentActivity implements FragmentS
 	 * @see com.aad1.aad1_pro_main_app.FragmentStartServer.FragmentCommunicator#startTCPService()
 	 */
 
+	@SuppressWarnings("static-access")
 	@Override
 	public void startTCPService() {
 		if(mService != null){
-			Intent service = new Intent(this, TCPService.class);
+			Intent service = new Intent(this, ServiceTCP.class);
+			service.putExtra("serverid", helper.getIPAddress());
+			service.putExtra("port", this.listenerPort);
 			startService(service);
 			fragLoading();
 			fragClients(modes);

@@ -20,7 +20,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class MainActivity extends Activity {
+public class ActivityMain extends Activity {
 	@SuppressWarnings("unused")
 	private static String TAG = "ServerActivity";
 	TextView txt_port = null;
@@ -28,7 +28,7 @@ public class MainActivity extends Activity {
 	ListView list = null;
 	private int listenerPort = 6000;
 	ArrayList<String> logList = null;
-	TCPService mService;
+	ServiceTCP mService;
     boolean mBound = false;
     ArrayAdapter<String> arrayAdapter = null;
 
@@ -61,7 +61,7 @@ public class MainActivity extends Activity {
     @Override
 	protected void onResume() {
 	    super.onResume();
-	    Intent intent= new Intent(this, TCPService.class);
+	    Intent intent= new Intent(this, ServiceTCP.class);
 	    bindService(intent, mConnection,
 	        Context.BIND_AUTO_CREATE);
 	}
@@ -78,9 +78,9 @@ public class MainActivity extends Activity {
 
 	    public void onServiceConnected(ComponentName className, 
 	        IBinder binder) {
-	    	TCPService.TCPBinder b = (TCPService.TCPBinder) binder;
+	    	ServiceTCP.TCPBinder b = (ServiceTCP.TCPBinder) binder;
 	    	mService = b.getService();
-	    	Toast.makeText(MainActivity.this, "Connected", Toast.LENGTH_SHORT)
+	    	Toast.makeText(ActivityMain.this, "Connected", Toast.LENGTH_SHORT)
 	          .show();
 	    	mBound = true;
 	    }
@@ -95,7 +95,7 @@ public class MainActivity extends Activity {
     // ListView Updates
     
     public void clearList(View view){
-    	startService(new Intent(MainActivity.this, TCPService.class));
+    	startService(new Intent(ActivityMain.this, ServiceTCP.class));
     	logList.removeAll(logList);
     	arrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1, logList);
     	

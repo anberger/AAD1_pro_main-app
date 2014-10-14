@@ -25,7 +25,7 @@ public class Helper {
      * @return  address or empty string
      */
     @SuppressLint("DefaultLocale") 
-    public static String getIPAddress(boolean useIPv4) {
+    public static String getIPAddress() {
         try {
             List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
             for (NetworkInterface intf : interfaces) {
@@ -34,15 +34,8 @@ public class Helper {
                     if (!addr.isLoopbackAddress()) {
                         String sAddr = addr.getHostAddress().toUpperCase();
                         boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr); 
-                        if (useIPv4) {
                             if (isIPv4) 
                                 return sAddr;
-                        } else {
-                            if (!isIPv4) {
-                                int delim = sAddr.indexOf('%'); // drop ip6 port suffix
-                                return delim<0 ? sAddr : sAddr.substring(0, delim);
-                            }
-                        }
                     }
                 }
             }

@@ -8,19 +8,18 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.util.Log;
+import android.support.v4.content.LocalBroadcastManager;
 
-public class TCPService extends Service {
+public class ServiceTCP extends Service {
 
     // Binder given to clients
     private final IBinder mBinder = new TCPBinder();
-    private final int listenerPort = 6000;
+    private String PORT = "";
+    private String SERVERID = "";
     private boolean isAlreadyConnected = false;
-    
-	private static String TAG = "ServerActivity";
 
     Bundle  bundle = new Bundle(); 
-    private TCPServer mTCPServer;   
+    private ThreadTCPServer mTCPServer;   
     
     
     @SuppressLint("HandlerLeak") 
@@ -28,13 +27,19 @@ public class TCPService extends Service {
         @Override public void handleMessage(Message msg) 
         {     
         	bundle = msg.getData();
-        	
-        	if(bundle.containsKey("MSG")){
-        		Log.d(TAG,bundle.getString("MSG"));
-        		Log.d(TAG,"FUCK");
+        	if(bundle != null){
+	        	if(bundle.containsKey("MSG")){
+	        		send2Activity(bundle.get("MSG").toString());
+	        	}
         	}
         } 
     };
+     
+    private void send2Activity(String msg){
+    	Intent intent = new Intent("messages");
+        intent.putExtra("MSG", msg);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }    
     
     public void send2Server(String message){
     	Message msg = mTCPServer.getHandler().obtainMessage(); 
@@ -48,16 +53,22 @@ public class TCPService extends Service {
      * runs in the same process as its clients, we don't need to deal with IPC.
      */
     public class TCPBinder extends Binder {
-    	TCPService getService() {
+    	ServiceTCP getService() {
             // Return this instance of LocalService so clients can call public methods
-            return TCPService.this;
+            return ServiceTCP.this;
         }
     } 
     
 
     @Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		// TODO Auto-generated method stub
+    	Bundle bundle = intent.getExtras();
+    	if(bundle != null){
+    		if(bundle.containsKey("port"))
+    			this.PORT = bundle.getString("port");
+    		if(bundle.containsKey("serverid"))
+    			this.SERVERID = bundle.getString("serverid");
+    	}
     	startTCP();
 		return START_STICKY;
 	}
@@ -65,8 +76,9 @@ public class TCPService extends Service {
     private void startTCP(){
     	if(!this.isAlreadyConnected){
     		this.isAlreadyConnected = true;
-    		mTCPServer = new TCPServer(mHandler);
-         	mTCPServer.setPort(listenerPort);
+    		mTCPServer = new ThreadTCPServer(mHandler);
+         	mTCPServer.setPort(Integer.parseInt(this.PORT));
+         	mTCPServer.setServerId(this.SERVERID);
          	mTCPServer.start();
     	}
     }
