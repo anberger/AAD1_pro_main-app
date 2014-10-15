@@ -28,8 +28,8 @@ public class ServiceTCP extends Service {
         {     
         	bundle = msg.getData();
         	if(bundle != null){
-	        	if(bundle.containsKey("MSG")){
-	        		send2Activity(bundle.get("MSG").toString());
+	        	if(bundle.containsKey("Object")){
+	        		send2Activity(bundle.getString("Object"));
 	        	}
         	}
         } 
@@ -37,13 +37,13 @@ public class ServiceTCP extends Service {
      
     private void send2Activity(String msg){
     	Intent intent = new Intent("messages");
-        intent.putExtra("MSG", msg);
+        intent.putExtra("Object", msg);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }    
     
     public void send2Server(String message){
     	Message msg = mTCPServer.getHandler().obtainMessage(); 
-    	bundle.putString("MSG", message);
+    	bundle.putString("Object", message);
         msg.setData(bundle);
         mTCPServer.getHandler().sendMessage(msg);
     }

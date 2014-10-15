@@ -25,6 +25,7 @@ public class ThreadTCPServer extends Thread {
 	private int PORT = 0;
 	private static ThreadTCPClientComm mTCPClientComm;   
 	private Handler mhandlerOutActivity;
+	private Helper helper = new Helper();
 	
 	/*
 	 * Getter and Setter Methods
@@ -55,7 +56,7 @@ public class ThreadTCPServer extends Thread {
         @Override public void handleMessage(Message msg) 
         { 
         	Bundle bundleActivity = msg.getData();
-        	SendBroadCast(bundleActivity.getString("message2thread"));
+        	SendBroadCast(bundleActivity.getString("Object"));
         } 
     };
     
@@ -89,11 +90,8 @@ public class ThreadTCPServer extends Thread {
 					ConnectionArray.add(SOCK);
 					
 					String CLIENTID = getIpFromSocket(SOCK);    
-
-					Send2Activity("Client with IP: "+ CLIENTID + " joined");
 					
 					mTCPClientComm = new ThreadTCPClientComm(mhandlerClient);
-					mTCPClientComm.setConnected(true);
 					mTCPClientComm.setSocket(SOCK);
 					mTCPClientComm.setClientID(CLIENTID);
 					mTCPClientComm.setServerID(this.SERVERID);
@@ -104,17 +102,17 @@ public class ThreadTCPServer extends Thread {
 				}
 			}
 		} catch(Exception X){
-			Log.d(TAG, X.toString() + "Der oasch thread");
+			Log.d(TAG, X.toString());
 			Looper.myLooper().quit();
 		} finally{
 			Looper.myLooper().quit();
 		}
 	};
 	
-	public void Send2Activity(String message){
+	public void Send2Activity(JsonObject jObject){
 		Bundle bundle = new Bundle();
         Message msg = mhandlerOutActivity.obtainMessage();   
-        bundle.putString("MSG", message);
+        bundle.putString("Object", jObject.toString());
         msg.setData(bundle);
         mhandlerOutActivity.sendMessage(msg);
     }
@@ -130,7 +128,7 @@ public class ThreadTCPServer extends Thread {
 			String ip = getIpFromSocket(TMPSocket);
 			
 			if(TMPClient != null && TMPSocket != null){
-				TMPClient.Send2Client(packageBuilder(
+				TMPClient.Send2Client(helper.packageBuilder(
 						this.SERVERID,
 						ip,
 						"Info",
@@ -139,20 +137,42 @@ public class ThreadTCPServer extends Thread {
 		}		
 	}
 	
-	public void Send2Client(JsonObject object){
+	public void Send2Client(JsonObject jObject){
+		
+		Gson gson = new GsonBuilder().create();
+		ParserPackages parsed = gson.fromJson( jObject , ParserPackages.class);	
+		
+		ThreadTCPClientComm TMPClient = null;
+		Socket TMPSocket = null;
+		
+		for(int i = 1; i<= ThreadTCPServer.Clients.size();i++){
+			TMPClient = ThreadTCPServer.Clients.get(i-1);
+			TMPSocket = ThreadTCPServer.ConnectionArray.get(i-1);
+			String ip = getIpFromSocket(TMPSocket);
+			
+			if(TMPClient != null && TMPSocket != null){
+				if(ip.equals(parsed.destination)){
+					TMPClient.Send2Client(jObject);
+				}
+			}
+		}	
 		
 	}
 	
 	public void MessageHandler(Bundle b){
 		
 		String sObject = b.getString("object");
-		JsonObject obj = new JsonParser().parse(sObject).getAsJsonObject();
+		JsonObject jObject = new JsonParser().parse(sObject).getAsJsonObject();
 		
 		Gson gson = new GsonBuilder().create();
-		ParserPackages parsed = gson.fromJson( obj , ParserPackages.class);	
-		Log.d(TAG,parsed.destination);
-		Log.d(TAG,parsed.type);
-		Log.d(TAG,parsed.message);
+		ParserPackages parsed = gson.fromJson( jObject , ParserPackages.class);	
+		
+		if(parsed.destination.equals(this.SERVERID)){
+			Send2Activity(jObject);
+		}
+		else {
+			Send2Client(jObject);
+		}
 	}
 	
 	public static void removeClient(){	
@@ -168,17 +188,5 @@ public class ThreadTCPServer extends Thread {
 	
 	public String getIpFromSocket(Socket SOCK){
 		return SOCK.getInetAddress().toString().replace("/", "");	
-	}
-	
-	private JsonObject packageBuilder(String origin, String destination, String type, String message){
-		
-		JsonObject jObject = new JsonObject();
-		
-		jObject.addProperty("origin", origin);		
-		jObject.addProperty("destination", destination);
-		jObject.addProperty("type", type);
-		jObject.addProperty("message", message);
-		
-		return jObject;
 	}
 }

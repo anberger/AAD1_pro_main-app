@@ -22,7 +22,7 @@ public class ActivityTCPConnector extends FragmentActivity implements FragmentSt
 	ServiceTCP mService;
     boolean mBound = false;
     private String listenerPort = "6000";
-	private Helper helper;
+	private Helper helper = new Helper();
 	private boolean[] modes = {false,false,false};
 	
 	@Override
@@ -53,7 +53,22 @@ public class ActivityTCPConnector extends FragmentActivity implements FragmentSt
 	private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
 	    @Override
 	    public void onReceive(Context context, Intent intent) {
-	        Toast.makeText(getApplicationContext(), intent.getStringExtra("MSG"), Toast.LENGTH_SHORT).show();
+	    	if(intent.getExtras().containsKey("Object")){
+	    		ParserPackages parsed = helper.messageParser(intent.getStringExtra("Object"));
+	    		
+	    		if(parsed.type.equals("Car")){
+	    			if(parsed.message.equals("online")){
+	    				modes[0] = true;
+	    				fragClients(modes);
+	    			}
+	    			if(parsed.message.equals("offline")){
+	    				modes[0] = false;
+	    				fragClients(modes);
+	    			}
+	    		}
+	    		
+	    		Toast.makeText(getApplicationContext(), parsed.origin + " send " + parsed.message, Toast.LENGTH_SHORT).show();
+	    	}
 	    }
 	};
 	
@@ -128,6 +143,8 @@ public class ActivityTCPConnector extends FragmentActivity implements FragmentSt
 	    	mBound = false;
 	    }
 	};
+	
+	
 	
 	/*
 	 * @see android.app.Activity#onPause()

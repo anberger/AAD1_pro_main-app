@@ -11,7 +11,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
 
 public class ThreadTCPClientComm extends Thread {
 	public Socket SOCK = null;
@@ -19,6 +18,7 @@ public class ThreadTCPClientComm extends Thread {
 	public boolean firstTime = true;
 	private BufferedOutputStream outputStream = null;
 	private BufferedInputStream inputStream = null;
+	private Helper helper = new Helper();
 	
 	// Constants for identification of the message
 	public String CLIENTID = null; 
@@ -58,7 +58,7 @@ public class ThreadTCPClientComm extends Thread {
 
 	// Send Data to Client
 	public void Send2Client(JsonObject jObject){
-		if(SOCK.isConnected()){
+		if(!SOCK.isClosed() && connected){
 			try {
 				outputStream.write(jObject.toString().getBytes());
 				outputStream.flush();
@@ -67,18 +67,6 @@ public class ThreadTCPClientComm extends Thread {
 				e.printStackTrace();
 			}
 		}
-	}
-	
-	private JsonObject packageBuilder(String origin, String destination, String type, String message){
-		
-		JsonObject jObject = new JsonObject();
-		
-		jObject.addProperty("origin", origin);		
-		jObject.addProperty("destination", destination);
-		jObject.addProperty("type", type);
-		jObject.addProperty("message", message);
-		
-		return jObject;
 	}
 	
 	// Run Method
@@ -91,6 +79,8 @@ public class ThreadTCPClientComm extends Thread {
 			
 			outputStream = new BufferedOutputStream(SOCK.getOutputStream());
 			inputStream = new BufferedInputStream(SOCK.getInputStream());
+			
+			connected = true;
 			
 			while(connected){
 			
@@ -118,20 +108,20 @@ public class ThreadTCPClientComm extends Thread {
 				SOCK.close();
 			} catch (IOException e) {
 				e.printStackTrace();
-				Send2TCPServer(packageBuilder(
+				Send2TCPServer(helper.packageBuilder(
 						this.CLIENTID,
 						this.SERVERID,
 						"Error",
 						"Unable to close socket"));
 			}finally{
-				Send2TCPServer(packageBuilder(
+				Send2TCPServer(helper.packageBuilder(
 						this.CLIENTID,
 						this.SERVERID,
 						"Error",
 						"Socket closed due to Error " + X.toString()));
 			}
 		} finally{
-			Send2TCPServer(packageBuilder(
+			Send2TCPServer(helper.packageBuilder(
 					this.CLIENTID,
 					this.SERVERID,
 					"Info",

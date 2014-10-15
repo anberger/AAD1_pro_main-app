@@ -5,6 +5,12 @@ import java.net.NetworkInterface;
 import java.util.Collections;
 import java.util.List;
 import org.apache.http.conn.util.InetAddressUtils;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 import android.annotation.SuppressLint;
 import android.os.Bundle;
 
@@ -41,5 +47,25 @@ public class Helper {
             }
         } catch (Exception ex) { } // for now eat exceptions
         return "";
+    }
+    
+    public JsonObject packageBuilder(String origin, String destination, String type, String message){
+		
+		JsonObject jObject = new JsonObject();
+		
+		jObject.addProperty("origin", origin);		
+		jObject.addProperty("destination", destination);
+		jObject.addProperty("type", type);
+		jObject.addProperty("message", message);
+		
+		return jObject;
+	}
+    
+    public ParserPackages messageParser(String sObject){
+		JsonObject jObject = new JsonParser().parse(sObject).getAsJsonObject();
+		
+		Gson gson = new GsonBuilder().create();
+		ParserPackages parsed = gson.fromJson( jObject , ParserPackages.class);	
+    	return parsed;
     }
 }
