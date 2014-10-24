@@ -2,7 +2,11 @@ package com.aad1.aad1_pro_main_app;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.Socket;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -15,8 +19,8 @@ public class ThreadTCPClientComm extends Thread {
 	public Socket SOCK = null;
 	public boolean connected = false;
 	public boolean firstTime = true;
-	private BufferedOutputStream outputStream = null;
-	private BufferedInputStream inputStream = null;
+	private DataOutputStream outputStream = null;
+	private DataInputStream inputStream = null;
 	private Helper helper = new Helper();
 	
 	@SuppressWarnings("unused")
@@ -62,7 +66,8 @@ public class ThreadTCPClientComm extends Thread {
 	public void Send2Client(JsonObject jObject){
 		if(!SOCK.isClosed() && connected){
 			try {
-				outputStream.write(jObject.toString().getBytes());
+				String msg = jObject.toString() + "\n";
+				outputStream.write(msg.getBytes());
 				outputStream.flush();
 			} catch (IOException e) {
 				this.connected = false;
@@ -79,8 +84,8 @@ public class ThreadTCPClientComm extends Thread {
 			
 			SOCK.setKeepAlive(true);
 			
-			outputStream = new BufferedOutputStream(SOCK.getOutputStream());
-			inputStream = new BufferedInputStream(SOCK.getInputStream());
+			outputStream = new DataOutputStream(SOCK.getOutputStream());
+			inputStream = new DataInputStream(SOCK.getInputStream());
 			
 			connected = true;	
 			
@@ -93,16 +98,26 @@ public class ThreadTCPClientComm extends Thread {
 			    if(inputStream.available() > 0){
 			    	boolean streaming = true;
 				    while (streaming) {
-				    	if((len = inputStream.read(buff)) != -1){
-				    		msg = new String(buff, 0, len);
-					        
+//				    	if((len = inputStream.read(buff)) != -1){
+//				    		msg = new String(buff, 0, len);
+//					        
+//							JsonParser parser = new JsonParser();
+//						    JsonObject jObject = parser.parse(msg).getAsJsonObject();
+//						    Send2TCPServer(jObject);
+//				    	}
+//				    	else {
+//				    		streaming = false;
+//				    	}
+				    	BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
+				        String inputLine;
+				        while ((inputLine = in.readLine()) != null){
 							JsonParser parser = new JsonParser();
-						    JsonObject jObject = parser.parse(msg).getAsJsonObject();
+						    JsonObject jObject = parser.parse(inputLine).getAsJsonObject();
 						    Send2TCPServer(jObject);
-				    	}
-				    	else {
-				    		streaming = false;
-				    	}
+				        }
+				        if(inputStream.available() == 0){
+					    	streaming = false;
+					    }				            
 				    }
 			    }
 				

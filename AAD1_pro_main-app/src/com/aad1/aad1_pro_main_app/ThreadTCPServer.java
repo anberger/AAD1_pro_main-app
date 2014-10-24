@@ -60,7 +60,8 @@ public class ThreadTCPServer extends Thread {
         	
         	if(bundleActivity != null){
 	        	if(bundleActivity.containsKey("Object")){
-	        		SendBroadCast(bundleActivity.getString("Object"));
+	        		JsonObject jObject = new JsonParser().parse(bundleActivity.getString("Object")).getAsJsonObject();
+	        		Send2Client(jObject);
 	        	}
         	}
         	return false;

@@ -56,7 +56,7 @@ public class ServiceTCP extends Service {
     }    
     
     public void send2Server(String message){
-    	Message msg = mTCPServer.getHandler().obtainMessage(); 
+		Message msg = mTCPServer.getHandler().obtainMessage(); 
     	bundle.putString("Object", message);
         msg.setData(bundle);
         mTCPServer.getHandler().sendMessage(msg);

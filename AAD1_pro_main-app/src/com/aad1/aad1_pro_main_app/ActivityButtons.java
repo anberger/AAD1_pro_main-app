@@ -1,9 +1,18 @@
 package com.aad1.aad1_pro_main_app;
 
+import com.google.gson.JsonObject;
+
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -13,26 +22,30 @@ import android.widget.ImageButton;
 import android.widget.MediaController;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.VideoView;
 
 public class ActivityButtons extends Activity {
 
+	ServiceTCP mService;
+    boolean mBound = false;
+    private Helper helper = new Helper();
+	
 	private ImageButton btn_forward, btn_backward, btn_left, btn_right;
 	RelativeLayout layout_joystick;
 	ClassJoyStick js;
 	private int motorLeft = 0;
 	private int motorRight = 0;
-	private String address; // MAC-address from settings 
 	private int pwmBtnMotorLeft;
 	private int pwmBtnMotorRight;
 	
+	private int valForward = 0;
+	private int valBackward = 0;
+	private int valRight = 0;
+	private int valLeft = 0;
 	
-	private String commandLeft; // command symbol for left motor from settings
-								
-	private String commandRight; // command symbol for right motor from settings
-									
-	private String commandHorn; // command symbol for optional command from
-								// settings (for example - horn) 
+	private String commandLeft; // command symbol for left motor from settings						
+	private String commandRight; // command symbol for right motor from settings							
 	private boolean show_Debug; // show debug information (from settings)
 								
 	
@@ -48,7 +61,7 @@ public class ActivityButtons extends Activity {
 		MediaController vidControl = new MediaController(this);
 		vidControl.setAnchorView(vidView);
 		vidView.setMediaController(vidControl);
-		vidView.start();
+		//vidView.start();
 
 		//address = (String) getResources().getText(R.string.default_MAC);
 		pwmBtnMotorLeft = Integer.parseInt((String) getResources().getText(
@@ -59,8 +72,6 @@ public class ActivityButtons extends Activity {
 				R.string.default_commandLeft);
 		commandRight = (String) getResources().getText(
 				R.string.default_commandRight);
-		commandHorn = (String) getResources().getText(
-				R.string.default_commandHorn);
 
 		//loadPref();
 
@@ -118,115 +129,146 @@ public class ActivityButtons extends Activity {
 
 		btn_forward.setOnTouchListener(new OnTouchListener() {
 			public boolean onTouch(View v, MotionEvent event) {
-				if (event.getAction() == MotionEvent.ACTION_MOVE) {
-					motorLeft = pwmBtnMotorLeft;
-					motorRight = pwmBtnMotorRight;
-					cmdSend = String.valueOf(commandLeft + motorLeft + "\r"
-							+ commandRight + motorRight + "\r");
-					ShowTextDebug(cmdSend);
-					Log.d("Direction:", ""+cmdSend);
+				if (event.getAction() == MotionEvent.ACTION_DOWN) {
+					valForward = 100;
 				} else if (event.getAction() == MotionEvent.ACTION_UP) {
-					motorLeft = 0;
-					motorRight = 0;
-					cmdSend = String.valueOf(commandLeft + motorLeft + "\r"
-							+ commandRight + motorRight + "\r");
-					ShowTextDebug(cmdSend);
-					Log.d("Direction:", ""+cmdSend);
+					valForward = 0;
 				}
+				commandBuilder();
 				return false;
 			}
 		});
 
 		btn_left.setOnTouchListener(new OnTouchListener() {
 			public boolean onTouch(View v, MotionEvent event) {
-				if (event.getAction() == MotionEvent.ACTION_MOVE) {
-					motorLeft = -pwmBtnMotorLeft;
-					motorRight = pwmBtnMotorRight;
-					cmdSend = String.valueOf(commandLeft + motorLeft + "\r"
-							+ commandRight + motorRight + "\r");
-					ShowTextDebug(cmdSend);
-
+				if (event.getAction() == MotionEvent.ACTION_DOWN) {
+					valLeft = 100;
 				} else if (event.getAction() == MotionEvent.ACTION_UP) {
-					motorLeft = 0;
-					motorRight = 0;
-					cmdSend = String.valueOf(commandLeft + motorLeft + "\r"
-							+ commandRight + motorRight + "\r");
-					ShowTextDebug(cmdSend);
-					Log.d("Direction:", ""+cmdSend);
+					valLeft = 0;
 				}
+				commandBuilder();
 				return false;
 			}
 		});
 
 		btn_right.setOnTouchListener(new OnTouchListener() {
 			public boolean onTouch(View v, MotionEvent event) {
-				if (event.getAction() == MotionEvent.ACTION_MOVE) {
-					motorLeft = pwmBtnMotorLeft;
-					motorRight = -pwmBtnMotorRight;
-					cmdSend = String.valueOf(commandLeft + motorLeft + "\r"
-							+ commandRight + motorRight + "\r");
-					ShowTextDebug(cmdSend);
-
+				if (event.getAction() == MotionEvent.ACTION_DOWN) {
+					valRight = 100;
 				} else if (event.getAction() == MotionEvent.ACTION_UP) {
-					motorLeft = 0;
-					motorRight = 0;
-					cmdSend = String.valueOf(commandLeft + motorLeft + "\r"
-							+ commandRight + motorRight + "\r");
-					ShowTextDebug(cmdSend);
-					Log.d("Direction:", ""+cmdSend);
+					valRight = 0;
 				}
+				commandBuilder();
 				return false;
 			}
 		});
 
 		btn_backward.setOnTouchListener(new OnTouchListener() {
 			public boolean onTouch(View v, MotionEvent event) {
-				if (event.getAction() == MotionEvent.ACTION_MOVE) {
-					motorLeft = -pwmBtnMotorLeft;
-					motorRight = -pwmBtnMotorRight;
-					cmdSend = String.valueOf(commandLeft + motorLeft + "\r"
-							+ commandRight + motorRight + "\r");
-					ShowTextDebug(cmdSend);
-
+				if (event.getAction() == MotionEvent.ACTION_DOWN) {
+					valBackward = 100;
 				} else if (event.getAction() == MotionEvent.ACTION_UP) {
-					motorLeft = 0;
-					motorRight = 0;
-					cmdSend = String.valueOf(commandLeft + motorLeft + "\r"
-							+ commandRight + motorRight + "\r");
-					ShowTextDebug(cmdSend);
-					Log.d("Direction:", ""+cmdSend);
+					valBackward = 0;
 				}
+				commandBuilder();
 				return false;
 			}
 		});
 
 	}
-
-	private void ShowTextDebug(String txtDebug) {
-		TextView textCmdSend = (TextView) findViewById(R.id.textViewCmdSend);
-		if (show_Debug) {
-			textCmdSend.setText(String.valueOf("Send:" + txtDebug));
-		} else {
-			textCmdSend.setText("");
+	
+	
+	private void commandBuilder(){
+		
+		String valFW = String.valueOf(valForward);
+		
+		while(valFW.length() <= 2){
+			valFW = "0" + valFW;
 		}
+		
+		String valBW = String.valueOf(valBackward);
+		
+		while(valBW.length() <= 2){
+			valBW = "0" + valBW;
+		}
+		
+		String valR = String.valueOf(valRight);
+		
+		while(valR.length() <= 2){
+			valR = "0" + valR;
+		}
+		
+		
+		String valL = String.valueOf(valLeft);
+		
+		while(valL.length() <= 2){
+			valL = "0" + valL;
+		}
+		
+		String message = valFW + valR + valBW + valL;
+					     
+		
+		JsonObject command = helper.packageBuilder(helper.getIPAddress(), "192.168.1.7","carvalues" ,  message);
+		mService.send2Server(command.toString());		
 	}
+	
+	private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+	    @Override
+	    public void onReceive(Context context, Intent intent) {
+	    	if(intent.getExtras() != null){
+		    	if(intent.getExtras().containsKey("Object")){
+		    		ParserPackages parsed = helper.messageParser(intent.getStringExtra("Object"));
+		    		Toast.makeText(getApplicationContext(), parsed.origin + " send " + parsed.message, Toast.LENGTH_SHORT).show();
+		    	}
+	    	}
+	    }
+	};
 
+	
+	/*
+	 * @see android.app.Activity#onResume() 	
+	 * Bind to the TCP Server Service
+	 */
 	
 	@Override
 	protected void onResume() {
-		super.onResume();
+	    super.onResume();
+	    Intent intent= new Intent(this, ServiceTCP.class);
+	    bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+	    LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter("messages"));
+	}	
+	
+	/*
+	 * Handle the Service Connection	
+	 */
+	
+	private ServiceConnection mConnection = new ServiceConnection() {
+	    public void onServiceConnected(ComponentName className, 
+	        IBinder binder) {
+	    	ServiceTCP.TCPBinder b = (ServiceTCP.TCPBinder) binder;
+	    	mService = b.getService();
+	    	mBound = true;
+	    }
 
-	}
-
+	    public void onServiceDisconnected(ComponentName className) {
+	    	mService= null;
+	    	mBound = false;
+	    }
+	};
+	
+	
+	/*
+	 * @see android.app.Activity#onPause()
+	 */
 	@Override
-	public void onPause() {
+	protected void onPause() {
 		super.onPause();
-
-	}
-
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-
-		
+		if(mBound){
+			unbindService(mConnection);
+		}
+		if (mMessageReceiver != null) {
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
+            mMessageReceiver = null;
+        }
 	}
 }
