@@ -1,6 +1,4 @@
 package com.aad1.aad1_pro_main_app;
-
-import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
@@ -17,23 +15,39 @@ public class ServiceTCP extends Service {
     private String PORT = "";
     private String SERVERID = "";
     private boolean isAlreadyConnected = false;
-
+    private Helper helper = new Helper();
+    
+    // These states indicates which device is online 
+    private boolean[] deviceStates = {false,false,false}; // CAR, VIDEO, GPS
+    
     Bundle  bundle = new Bundle(); 
     private ThreadTCPServer mTCPServer;   
     
+    // Getter method for the DeviceState
+    public boolean[] getDeviceStates(){
+    	return this.deviceStates;
+    }
     
-    @SuppressLint("HandlerLeak") 
-	public Handler mHandler = new Handler(){   //handles the INcoming msgs 
-        @Override public void handleMessage(Message msg) 
+	public Handler mHandler = new Handler(new Handler.Callback(){   //handles the INcoming msgs 
+        @Override 
+        public boolean handleMessage(Message msg) 
         {     
         	bundle = msg.getData();
         	if(bundle != null){
 	        	if(bundle.containsKey("Object")){
-	        		send2Activity(bundle.getString("Object"));
+	        		
+	        		String message = bundle.getString("Object");
+	        		
+	        		// Send the message to the Activity
+	        		send2Activity(message);
+	        		
+	        		// If the devices change his states then update the states in this service
+	        		deviceStates = helper.updateDeviceState(message, deviceStates);
 	        	}
         	}
+        	return false;
         } 
-    };
+    });
      
     private void send2Activity(String msg){
     	Intent intent = new Intent("messages");

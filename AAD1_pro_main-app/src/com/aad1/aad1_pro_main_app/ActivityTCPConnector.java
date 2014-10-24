@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.widget.Toast;
 
 /*
@@ -19,6 +20,7 @@ import android.widget.Toast;
 
 public class ActivityTCPConnector extends FragmentActivity implements FragmentStartServer.FragmentCommunicator {
 
+	private String TAG = "ServerActivity";
 	ServiceTCP mService;
     boolean mBound = false;
     private String listenerPort = "6000";
@@ -29,8 +31,6 @@ public class ActivityTCPConnector extends FragmentActivity implements FragmentSt
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_tcp_connection);
-		
-		LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter("messages"));
 		
 		if(savedInstanceState == null){
 			fragLogo();
@@ -47,27 +47,30 @@ public class ActivityTCPConnector extends FragmentActivity implements FragmentSt
 	protected void onSaveInstanceState(Bundle outState) {
 		// TODO Auto-generated method stub
 		outState.putBooleanArray("modes", modes);
+		
 		super.onSaveInstanceState(outState);
 	}
 	
 	private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
 	    @Override
 	    public void onReceive(Context context, Intent intent) {
-	    	if(intent.getExtras().containsKey("Object")){
-	    		ParserPackages parsed = helper.messageParser(intent.getStringExtra("Object"));
-	    		
-	    		if(parsed.type.equals("Car")){
-	    			if(parsed.message.equals("online")){
-	    				modes[0] = true;
-	    				fragClients(modes);
-	    			}
-	    			if(parsed.message.equals("offline")){
-	    				modes[0] = false;
-	    				fragClients(modes);
-	    			}
-	    		}
-	    		
-	    		Toast.makeText(getApplicationContext(), parsed.origin + " send " + parsed.message, Toast.LENGTH_SHORT).show();
+	    	if(intent.getExtras() != null){
+		    	if(intent.getExtras().containsKey("Object")){
+		    		ParserPackages parsed = helper.messageParser(intent.getStringExtra("Object"));
+		    		
+		    		if(parsed.type.equals("car")){
+		    			if(parsed.message.equals("online")){
+		    				modes[0] = true;
+		    				fragClients(modes);
+		    			}
+		    			if(parsed.message.equals("offline")){
+		    				modes[0] = false;
+		    				fragClients(modes);
+		    			}
+		    		}	
+		    		Log.d(TAG,parsed.message);
+		    		Toast.makeText(getApplicationContext(), parsed.origin + " send " + parsed.message, Toast.LENGTH_SHORT).show();
+		    	}
 	    	}
 	    }
 	};
@@ -77,24 +80,25 @@ public class ActivityTCPConnector extends FragmentActivity implements FragmentSt
 	 */
 	
 	private void fragLoading(){
-		if (findViewById(R.id.frame_up) != null) {
-            FragmentLoading frag = new FragmentLoading();
-            getSupportFragmentManager().beginTransaction().replace(R.id.frame_up, frag).commit();
-        }
-	}
-	
-	@SuppressWarnings("static-access")
-	private void fragClients(boolean[] modes){
 		
 		String[] settings = new String[2];
 		settings[0] = helper.getIPAddress();
 		settings[1] = this.listenerPort;
 		
+		if (findViewById(R.id.frame_up) != null) {
+            FragmentLoading frag = new FragmentLoading();
+            Bundle b = new Bundle();
+            b.putStringArray("settings", settings);
+            frag.setArguments(b);
+            getSupportFragmentManager().beginTransaction().replace(R.id.frame_up, frag).commit();
+        }
+	}
+	
+	private void fragClients(boolean[] modes){
 		if (findViewById(R.id.frame_down) != null) {
             FragmentClients frag = new FragmentClients();
             Bundle b = new Bundle();
             b.putBooleanArray("modes", modes);
-            b.putStringArray("settings", settings);
             frag.setArguments(b);
             getSupportFragmentManager().beginTransaction().replace(R.id.frame_down, frag).commit();
         }
@@ -124,6 +128,7 @@ public class ActivityTCPConnector extends FragmentActivity implements FragmentSt
 	    super.onResume();
 	    Intent intent= new Intent(this, ServiceTCP.class);
 	    bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+	    LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter("messages"));
 	}	
 	
 	/*
@@ -145,7 +150,6 @@ public class ActivityTCPConnector extends FragmentActivity implements FragmentSt
 	};
 	
 	
-	
 	/*
 	 * @see android.app.Activity#onPause()
 	 */
@@ -155,13 +159,24 @@ public class ActivityTCPConnector extends FragmentActivity implements FragmentSt
 		if(mBound){
 			unbindService(mConnection);
 		}
+		if (mMessageReceiver != null) {
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
+            mMessageReceiver = null;
+        }
 	}
+	
+	
 	
 	/*
 	 * @see com.aad1.aad1_pro_main_app.FragmentStartServer.FragmentCommunicator#startTCPService()
 	 */
 
-	@SuppressWarnings("static-access")
+	@Override
+	protected void onStop() {
+		// TODO Auto-generated method stub
+		super.onStop();
+	}
+
 	@Override
 	public void startTCPService() {
 		if(mService != null){

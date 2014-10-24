@@ -9,7 +9,6 @@ import com.google.gson.JsonParser;
 
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.Message;
 
 public class ThreadTCPClientComm extends Thread {
@@ -19,6 +18,9 @@ public class ThreadTCPClientComm extends Thread {
 	private BufferedOutputStream outputStream = null;
 	private BufferedInputStream inputStream = null;
 	private Helper helper = new Helper();
+	
+	@SuppressWarnings("unused")
+	private String TAG = "ServerActivity";
 	
 	// Constants for identification of the message
 	public String CLIENTID = null; 
@@ -51,7 +53,7 @@ public class ThreadTCPClientComm extends Thread {
 	// This Method sends Data to the TCP Server Class
 	private void Send2TCPServer(JsonObject jObject){
         Message msg = outHandler.obtainMessage(); 
-        bundle.putString("object", jObject.toString());        
+        bundle.putString("Object", jObject.toString());        
         msg.setData(bundle);
         outHandler.sendMessage(msg);
     }
@@ -71,16 +73,16 @@ public class ThreadTCPClientComm extends Thread {
 	
 	// Run Method
 	public void run() {
-		try {
-			Looper.prepare();
-			
+		try {			
 			// Set IP as identifier
 			setClientID(SOCK.getInetAddress().toString().replace("/", ""));
+			
+			SOCK.setKeepAlive(true);
 			
 			outputStream = new BufferedOutputStream(SOCK.getOutputStream());
 			inputStream = new BufferedInputStream(SOCK.getInputStream());
 			
-			connected = true;
+			connected = true;	
 			
 			while(connected){
 			
@@ -88,12 +90,20 @@ public class ThreadTCPClientComm extends Thread {
 			    int len = 0;
 			    String msg = null;
 			 
-			    while ((len = inputStream.read(buff)) != -1) {
-			        msg = new String(buff, 0, len);
-			        
-					JsonParser parser = new JsonParser();
-				    JsonObject jObject = parser.parse(msg).getAsJsonObject();
-				    Send2TCPServer(jObject);
+			    if(inputStream.available() > 0){
+			    	boolean streaming = true;
+				    while (streaming) {
+				    	if((len = inputStream.read(buff)) != -1){
+				    		msg = new String(buff, 0, len);
+					        
+							JsonParser parser = new JsonParser();
+						    JsonObject jObject = parser.parse(msg).getAsJsonObject();
+						    Send2TCPServer(jObject);
+				    	}
+				    	else {
+				    		streaming = false;
+				    	}
+				    }
 			    }
 				
 				// Check connection
@@ -103,10 +113,9 @@ public class ThreadTCPClientComm extends Thread {
 			}
 			
 		} catch(Exception X){
-			Looper.myLooper().quit();
 			try {
 				SOCK.close();
-			} catch (IOException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 				Send2TCPServer(helper.packageBuilder(
 						this.CLIENTID,
@@ -126,7 +135,6 @@ public class ThreadTCPClientComm extends Thread {
 					this.SERVERID,
 					"Info",
 					"Client left normally"));
-			Looper.myLooper().quit();
 		}
 	};
 }

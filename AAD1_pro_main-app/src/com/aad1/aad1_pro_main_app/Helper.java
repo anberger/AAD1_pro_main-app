@@ -31,7 +31,7 @@ public class Helper {
      * @return  address or empty string
      */
     @SuppressLint("DefaultLocale") 
-    public static String getIPAddress() {
+    public String getIPAddress() {
         try {
             List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
             for (NetworkInterface intf : interfaces) {
@@ -67,5 +67,45 @@ public class Helper {
 		Gson gson = new GsonBuilder().create();
 		ParserPackages parsed = gson.fromJson( jObject , ParserPackages.class);	
     	return parsed;
+    }
+    
+    @SuppressLint("DefaultLocale") 
+    public boolean[] updateDeviceState(String sObject, boolean[] state){
+		JsonObject jObject = new JsonParser().parse(sObject).getAsJsonObject();
+		
+		Gson gson = new GsonBuilder().create();
+		ParserPackages parsed = gson.fromJson( jObject , ParserPackages.class);	
+		
+		if(parsed.type.equals("car") ||
+		   parsed.type.equals("video") ||
+		   parsed.type.equals("gps")){
+		
+			Devices enumval = Devices.valueOf(parsed.type.toUpperCase());
+			switch (enumval) {
+			   case CAR: 
+				   if(parsed.message.equals("online")) state[0] = true;
+				   else state[0] = false;
+				   break;
+			   case VIDEO: 
+				   if(parsed.message.equals("online")) state[1] = true;
+				   else state[1] = false;
+				   break;
+			   case GPS: 
+				   if(parsed.message.equals("online")) state[2] = true;
+				   else state[2] = false;
+				   break;
+			}
+		}
+		return state;
+    }
+    public enum Devices {
+        CAR,
+        VIDEO,
+        GPS;
+
+		public static Devices fromString(String type) {
+			// TODO Auto-generated method stub
+			return null;
+		}
     }
 }

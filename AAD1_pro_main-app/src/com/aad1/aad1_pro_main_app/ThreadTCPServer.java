@@ -1,5 +1,6 @@
 package com.aad1.aad1_pro_main_app;
 
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -9,10 +10,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
@@ -22,9 +21,11 @@ public class ThreadTCPServer extends Thread {
 	public static ArrayList<ThreadTCPClientComm> Clients = new ArrayList<ThreadTCPClientComm>();
 	private static String TAG = "ServerActivity";
 	private String SERVERID = "";
+	private ServerSocket SERVER = null;
 	private int PORT = 0;
 	private static ThreadTCPClientComm mTCPClientComm;   
-	private Handler mhandlerOutActivity;
+	private Handler mhandlerOutActivity;	
+	
 	private Helper helper = new Helper();
 	
 	/*
@@ -51,37 +52,45 @@ public class ThreadTCPServer extends Thread {
 	 * Message Handlers
 	 */
 	
-	@SuppressLint("HandlerLeak")
-	private Handler mhandlerActivity = new Handler(){
-        @Override public void handleMessage(Message msg) 
+	private Handler mhandlerActivity = new Handler(new Handler.Callback() {	
+        @Override 
+        public boolean handleMessage(Message msg) 
         { 
         	Bundle bundleActivity = msg.getData();
-        	SendBroadCast(bundleActivity.getString("Object"));
+        	
+        	if(bundleActivity != null){
+	        	if(bundleActivity.containsKey("Object")){
+	        		SendBroadCast(bundleActivity.getString("Object"));
+	        	}
+        	}
+        	return false;
         } 
-    };
+    });
     
-    @SuppressLint("HandlerLeak") 
-    public Handler mhandlerClient = new Handler(){   //handles the INcoming msgs 
-        @Override public void handleMessage(Message msg) 
+    public Handler mhandlerClient = new Handler(new Handler.Callback(){   //handles the INcoming msgs 
+        @Override 
+        public boolean handleMessage(Message msg) 
         {             	
         	Bundle bundle = msg.getData();
  
         	if(bundle != null){
-        		MessageHandler(bundle);
+        		if(bundle.containsKey("Object")){
+        			MessageHandler(bundle.getString("Object"));
+        		}
         	}
+        	return false;
         } 
-    };
+    });
+	
 	
 	/*
 	 * Main Server Thread
 	 * @see java.lang.Thread#run()
 	 */
     
-	public void run() {
+	public void run() {			
 		try {
-	        Looper.prepare();
-			@SuppressWarnings("resource")
-			ServerSocket SERVER = new ServerSocket(PORT);
+			SERVER = new ServerSocket(PORT);
 			Log.d(TAG,"Waiting for Clients");
 			
 			while(true){
@@ -99,13 +108,17 @@ public class ThreadTCPServer extends Thread {
 					
 					ThreadTCPServer.Clients.add(mTCPClientComm);
 					SendBroadCast("new Client arrived with IP: " + CLIENTID);
+					Log.d(TAG,"new Client arrived with IP: " + CLIENTID);
 				}
 			}
 		} catch(Exception X){
 			Log.d(TAG, X.toString());
-			Looper.myLooper().quit();
-		} finally{
-			Looper.myLooper().quit();
+		} finally{			
+			try {
+				SERVER.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	};
 	
@@ -159,9 +172,7 @@ public class ThreadTCPServer extends Thread {
 		
 	}
 	
-	public void MessageHandler(Bundle b){
-		
-		String sObject = b.getString("object");
+	public void MessageHandler(String sObject){
 		JsonObject jObject = new JsonParser().parse(sObject).getAsJsonObject();
 		
 		Gson gson = new GsonBuilder().create();
