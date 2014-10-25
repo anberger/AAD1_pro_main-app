@@ -2,14 +2,12 @@ package com.aad1.aad1_pro_main_app;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.widget.TextView;
 import android.widget.Toast;
 
 public class ActivityMain extends Activity implements OnClickListener {
@@ -21,9 +19,6 @@ public class ActivityMain extends Activity implements OnClickListener {
 	public void onCreate(Bundle savedInstanceState) {
 	    super.onCreate(savedInstanceState);
 	    setContentView(R.layout.activity_main);
-	    
-	    TextView textv = (TextView) findViewById(R.id.textView1);
-	    //textv.setShadowLayer(1, 3, 3, Color.GRAY);
 	    
 	    btnActButtons = (Button) findViewById(R.id.button_buttons);
 	    btnActButtons.setOnClickListener(this);

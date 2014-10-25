@@ -1,7 +1,6 @@
 package com.aad1.aad1_pro_main_app;
 
 import com.google.gson.JsonObject;
-
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -21,7 +20,6 @@ import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.MediaController;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VideoView;
 
@@ -34,22 +32,11 @@ public class ActivityButtons extends Activity {
 	private ImageButton btn_forward, btn_backward, btn_left, btn_right;
 	RelativeLayout layout_joystick;
 	ClassJoyStick js;
-	private int motorLeft = 0;
-	private int motorRight = 0;
-	private int pwmBtnMotorLeft;
-	private int pwmBtnMotorRight;
 	
 	private int valForward = 0;
 	private int valBackward = 0;
 	private int valRight = 0;
 	private int valLeft = 0;
-	
-	private String commandLeft; // command symbol for left motor from settings						
-	private String commandRight; // command symbol for right motor from settings							
-	private boolean show_Debug; // show debug information (from settings)
-								
-	
-	private String cmdSend;
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -63,15 +50,6 @@ public class ActivityButtons extends Activity {
 		vidView.setMediaController(vidControl);
 		//vidView.start();
 
-		//address = (String) getResources().getText(R.string.default_MAC);
-		pwmBtnMotorLeft = Integer.parseInt((String) getResources().getText(
-				R.string.default_pwmBtnMotorLeft));
-		pwmBtnMotorRight = Integer.parseInt((String) getResources().getText(
-				R.string.default_pwmBtnMotorRight));
-		commandLeft = (String) getResources().getText(
-				R.string.default_commandLeft);
-		commandRight = (String) getResources().getText(
-				R.string.default_commandRight);
 
 		//loadPref();
 
@@ -92,7 +70,7 @@ public class ActivityButtons extends Activity {
 		js = new ClassJoyStick(getApplicationContext(), layout_joystick,
 				R.drawable.image_button);
 		js.setStickSize(100, 100);
-		js.setLayoutSize(300, 300);
+		js.setLayoutSize(600, 600);
 		js.setLayoutAlpha(200);
 		js.setStickAlpha(150);
 		js.setOffset(75);
@@ -101,30 +79,55 @@ public class ActivityButtons extends Activity {
 		layout_joystick.setOnTouchListener(new OnTouchListener() {
 			public boolean onTouch(View arg0, MotionEvent arg1) {
 				js.drawStick(arg1);
+				
 				if (arg1.getAction() == MotionEvent.ACTION_DOWN
-						|| arg1.getAction() == MotionEvent.ACTION_MOVE);
-				int direction = js.get8Direction();
-				if(direction == ClassJoyStick.STICK_UP) {
-					Log.d("Direction:", ""+direction);
-				} else if(direction == ClassJoyStick.STICK_UPRIGHT) {
-					Log.d("Direction:", ""+direction);
-				} else if(direction == ClassJoyStick.STICK_RIGHT) {
-					Log.d("Direction:", ""+direction);
-				} else if(direction == ClassJoyStick.STICK_DOWNRIGHT) {
-					Log.d("Direction:", ""+direction);
-				} else if(direction == ClassJoyStick.STICK_DOWN) {
-					Log.d("Direction:", ""+direction);
-				} else if(direction == ClassJoyStick.STICK_DOWNLEFT) {
-					Log.d("Direction:", ""+direction);
-				} else if(direction == ClassJoyStick.STICK_LEFT) {
-					Log.d("Direction:", ""+direction);
-				} else if(direction == ClassJoyStick.STICK_UPLEFT) {
-					Log.d("Direction:", ""+direction);
-				} else if(direction == ClassJoyStick.STICK_NONE) {
-					Log.d("Direction:", ""+direction);
+						|| arg1.getAction() == MotionEvent.ACTION_MOVE){
+					
+					float valX = arg1.getX();
+					float valY = arg1.getY();
+					
+					valX = (float) ((valX - js.getLayoutWidth()/2) / 2.5);
+					valY = (float) ((valY - js.getLayoutHeight()/2) / 2.5);
+					
+					if(valX < -100)	valX = -100;
+					else if(valX > 100) valX = 100;
+					
+					if(valY < -100)	valY = -100;
+					else if(valY > 100) valY = 100;
+					
+					if(valX < 0){
+						valRight = 0;
+						valLeft = (int) (valX * -1);
+					} // links
+					else {
+						valLeft = 0;
+						valRight = (int) valX;
+					} // rechts
+					
+					
+					if(valY < 0){
+						valForward = (int) (valY * -1);
+						valBackward = 0;
+					} // unten
+					else {
+						valForward = 0;
+						valBackward = (int) valY;
+					} // oben
+					
+					commandBuilder();
+					
+				}
+				else {
+					valLeft = 0;
+					valRight = 0;
+					valForward = 0;
+					valBackward = 0;
+					commandBuilder();
 				}
 				return true;
 			}
+			
+			
 		});
 
 		btn_forward.setOnTouchListener(new OnTouchListener() {
@@ -198,7 +201,6 @@ public class ActivityButtons extends Activity {
 			valR = "0" + valR;
 		}
 		
-		
 		String valL = String.valueOf(valLeft);
 		
 		while(valL.length() <= 2){
@@ -206,10 +208,17 @@ public class ActivityButtons extends Activity {
 		}
 		
 		String message = valFW + valR + valBW + valL;
-					     
-		
-		JsonObject command = helper.packageBuilder(helper.getIPAddress(), "192.168.1.7","carvalues" ,  message);
-		mService.send2Server(command.toString());		
+			
+		ClassDeviceState device = mService.getDeviceStates("car");
+		if(device != null){
+			if(device.getDeviceState()){
+				JsonObject command = helper.packageBuilder(helper.getIPAddress(), device.getDeviceIP(),"carvalues",message);
+				mService.send2Server(command.toString());	
+			}
+			else {
+				Toast.makeText(getApplicationContext(), "Device is offline", Toast.LENGTH_SHORT).show();
+			}
+		}
 	}
 	
 	private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {

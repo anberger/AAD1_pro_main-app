@@ -1,4 +1,6 @@
 package com.aad1.aad1_pro_main_app;
+import java.util.ArrayList;
+
 import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
@@ -18,14 +20,14 @@ public class ServiceTCP extends Service {
     private Helper helper = new Helper();
     
     // These states indicates which device is online 
-    private boolean[] deviceStates = {false,false,false}; // CAR, VIDEO, GPS
+    private ArrayList<ClassDeviceState> devices = new ArrayList<ClassDeviceState>();
     
     Bundle  bundle = new Bundle(); 
     private ThreadTCPServer mTCPServer;   
     
     // Getter method for the DeviceState
-    public boolean[] getDeviceStates(){
-    	return this.deviceStates;
+    public ClassDeviceState getDeviceStates(String deviceName){
+    	return helper.getDeviceFromArrayList(devices, deviceName);
     }
     
 	public Handler mHandler = new Handler(new Handler.Callback(){   //handles the INcoming msgs 
@@ -42,7 +44,7 @@ public class ServiceTCP extends Service {
 	        		send2Activity(message);
 	        		
 	        		// If the devices change his states then update the states in this service
-	        		deviceStates = helper.updateDeviceState(message, deviceStates);
+	        		devices = helper.updateDeviceState(message, devices);
 	        	}
         	}
         	return false;

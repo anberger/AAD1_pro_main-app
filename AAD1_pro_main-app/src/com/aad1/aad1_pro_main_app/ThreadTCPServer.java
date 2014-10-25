@@ -101,6 +101,9 @@ public class ThreadTCPServer extends Thread {
 					
 					String CLIENTID = getIpFromSocket(SOCK);    
 					
+					SOCK.setKeepAlive(true);
+					SOCK.setSoTimeout(0);
+					
 					mTCPClientComm = new ThreadTCPClientComm(mhandlerClient);
 					mTCPClientComm.setSocket(SOCK);
 					mTCPClientComm.setClientID(CLIENTID);

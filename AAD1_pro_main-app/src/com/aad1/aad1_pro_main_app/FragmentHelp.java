@@ -1,7 +1,6 @@
 package com.aad1.aad1_pro_main_app;
 
 import android.os.Bundle;
-import android.preference.PreferenceFragment;
 
 public class FragmentHelp extends FragmentPrefs {
 

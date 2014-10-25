@@ -1,7 +1,5 @@
 package com.aad1.aad1_pro_main_app;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -82,43 +80,21 @@ public class ThreadTCPClientComm extends Thread {
 			// Set IP as identifier
 			setClientID(SOCK.getInetAddress().toString().replace("/", ""));
 			
-			SOCK.setKeepAlive(true);
-			
 			outputStream = new DataOutputStream(SOCK.getOutputStream());
 			inputStream = new DataInputStream(SOCK.getInputStream());
 			
 			connected = true;	
 			
 			while(connected){
-			
-				byte[] buff = new byte[256];
-			    int len = 0;
-			    String msg = null;
 			 
 			    if(inputStream.available() > 0){
-			    	boolean streaming = true;
-				    while (streaming) {
-//				    	if((len = inputStream.read(buff)) != -1){
-//				    		msg = new String(buff, 0, len);
-//					        
-//							JsonParser parser = new JsonParser();
-//						    JsonObject jObject = parser.parse(msg).getAsJsonObject();
-//						    Send2TCPServer(jObject);
-//				    	}
-//				    	else {
-//				    		streaming = false;
-//				    	}
 				    	BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
 				        String inputLine;
 				        while ((inputLine = in.readLine()) != null){
 							JsonParser parser = new JsonParser();
 						    JsonObject jObject = parser.parse(inputLine).getAsJsonObject();
 						    Send2TCPServer(jObject);
-				        }
-				        if(inputStream.available() == 0){
-					    	streaming = false;
-					    }				            
-				    }
+				        }			           
 			    }
 				
 				// Check connection

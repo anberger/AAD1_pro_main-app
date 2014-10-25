@@ -2,6 +2,7 @@ package com.aad1.aad1_pro_main_app;
 
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.apache.http.conn.util.InetAddressUtils;
@@ -69,8 +70,7 @@ public class Helper {
     	return parsed;
     }
     
-    @SuppressLint("DefaultLocale") 
-    public boolean[] updateDeviceState(String sObject, boolean[] state){
+    public ArrayList<ClassDeviceState> updateDeviceState(String sObject, ArrayList<ClassDeviceState> devices){
 		JsonObject jObject = new JsonParser().parse(sObject).getAsJsonObject();
 		
 		Gson gson = new GsonBuilder().create();
@@ -79,33 +79,38 @@ public class Helper {
 		if(parsed.type.equals("car") ||
 		   parsed.type.equals("video") ||
 		   parsed.type.equals("gps")){
-		
-			Devices enumval = Devices.valueOf(parsed.type.toUpperCase());
-			switch (enumval) {
-			   case CAR: 
-				   if(parsed.message.equals("online")) state[0] = true;
-				   else state[0] = false;
-				   break;
-			   case VIDEO: 
-				   if(parsed.message.equals("online")) state[1] = true;
-				   else state[1] = false;
-				   break;
-			   case GPS: 
-				   if(parsed.message.equals("online")) state[2] = true;
-				   else state[2] = false;
-				   break;
+			
+			ClassDeviceState device = getDeviceFromArrayList(devices, parsed.type);
+			
+			boolean state = false;
+			if(parsed.message.equals("online")) state = true; 
+			
+			if(device != null){
+				int i = devices.indexOf(device);
+				
+				if(i != -1){					
+					devices.get(i).setDeviceState(state);
+				}
 			}
+			else {
+				device = new ClassDeviceState();
+				
+				device.setDeviceIP(parsed.origin);
+				device.setDeviceName(parsed.type);
+				device.setDeviceState(state);
+				
+				devices.add(device);
+			}	
 		}
-		return state;
+		return devices;
     }
-    public enum Devices {
-        CAR,
-        VIDEO,
-        GPS;
-
-		public static Devices fromString(String type) {
-			// TODO Auto-generated method stub
-			return null;
-		}
+    
+    public ClassDeviceState getDeviceFromArrayList(ArrayList<ClassDeviceState> devices, String deviceName){
+    	for(int i = 0; i < devices.size(); i++){
+			if(devices.get(i).getDeviceName().equals(deviceName)){
+				return devices.get(i);
+			}
+		} 	
+    	return null;
     }
 }
