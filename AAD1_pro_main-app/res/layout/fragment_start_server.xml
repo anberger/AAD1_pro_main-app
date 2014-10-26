@@ -7,14 +7,14 @@
 
     <ImageButton
         android:id="@+id/btn_tcp_start"
-        android:layout_width="150dp"
-        android:layout_height="150dp"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
         android:adjustViewBounds="true"
         android:background="@null"
         android:contentDescription="@string/txt_img_con_start"
         android:cropToPadding="false"
-        android:maxHeight="150dp"
-        android:maxWidth="150dp"
+        android:maxHeight="100dp"
+        android:maxWidth="100dp"
         android:padding="-20dp"
         android:scaleType="fitCenter"
         android:src="@drawable/icons_startup_play" />

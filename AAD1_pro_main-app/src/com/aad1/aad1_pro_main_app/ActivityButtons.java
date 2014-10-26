@@ -12,22 +12,17 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.provider.MediaStore.Images.Media;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
 import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.MediaController;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
-import android.widget.VideoView;
 
 public class ActivityButtons extends Activity {
 
@@ -171,7 +166,6 @@ public class ActivityButtons extends Activity {
 
 	}
 	
-	
 	private void commandBuilder(){
 		
 		String valFW = String.valueOf(valForward);
@@ -217,27 +211,18 @@ public class ActivityButtons extends Activity {
 	    public void onReceive(Context context, Intent intent) {
 	    	Bundle b = intent.getExtras();
 	    	if(b != null){
-		    	if(b.containsKey("Object")){
-		    		ParserPackages parsed = helper.messageParser(intent.getStringExtra("Object"));
-		    		//Toast.makeText(getApplicationContext(), parsed.origin + " send " + parsed.message, Toast.LENGTH_SHORT).show();
-		    	}
-		    	
 		    	if(b.containsKey("Image")){
 		    		byte[] img = intent.getByteArrayExtra("Image");
 		    		setImage(img);
-		    		
-		    		
 		    	}
 	    	}
 	    }
 	};
 	
+	@SuppressWarnings("deprecation")
 	private void setImage(byte[] image){
 		
 	    Bitmap b = BitmapFactory.decodeByteArray(image,0,image.length);   
-	    
-		//img.setImageBitmap(b);
-		
 		Drawable dr = new BitmapDrawable(b);
 		RelativeLayout r;
 		r = (RelativeLayout) findViewById(R.id.layout);

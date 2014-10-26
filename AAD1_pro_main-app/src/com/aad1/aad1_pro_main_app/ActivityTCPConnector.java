@@ -10,8 +10,6 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
-import android.widget.Toast;
 
 /*
  * Activity TCPConnectionActivity 
@@ -19,8 +17,6 @@ import android.widget.Toast;
  */
 
 public class ActivityTCPConnector extends FragmentActivity implements FragmentStartServer.FragmentCommunicator {
-
-	private String TAG = "ServerActivity";
 	ServiceTCP mService;
     boolean mBound = false;
     private String listenerPort = "6000";
@@ -38,8 +34,11 @@ public class ActivityTCPConnector extends FragmentActivity implements FragmentSt
 		}
 		else {
 			modes = savedInstanceState.getBooleanArray("modes");
-			fragLoading();
-			fragClients(modes);
+			
+			if(mBound){
+				fragLoading();
+				fragClients(modes);
+			}
 		}
 	}
 	
@@ -47,7 +46,6 @@ public class ActivityTCPConnector extends FragmentActivity implements FragmentSt
 	protected void onSaveInstanceState(Bundle outState) {
 		// TODO Auto-generated method stub
 		outState.putBooleanArray("modes", modes);
-		
 		super.onSaveInstanceState(outState);
 	}
 	
@@ -59,17 +57,17 @@ public class ActivityTCPConnector extends FragmentActivity implements FragmentSt
 		    		ParserPackages parsed = helper.messageParser(intent.getStringExtra("Object"));
 		    		
 		    		if(parsed.type.equals("car")){
-		    			if(parsed.message.equals("online")){
-		    				modes[0] = true;
-		    				fragClients(modes);
-		    			}
-		    			if(parsed.message.equals("offline")){
-		    				modes[0] = false;
-		    				fragClients(modes);
-		    			}
-		    		}	
-		    		Log.d(TAG,parsed.message);
-		    		//Toast.makeText(getApplicationContext(), parsed.origin + " send " + parsed.message, Toast.LENGTH_SHORT).show();
+		    			modes[0] = mService.getDeviceStates(parsed.type).getDeviceState();
+		    			fragClients(modes);
+		    		}
+		    		if(parsed.type.equals("video")){
+		    			modes[1] = mService.getDeviceStates(parsed.type).getDeviceState();
+		    			fragClients(modes);
+		    		}
+		    		if(parsed.type.equals("gps")){
+		    			modes[2] = mService.getDeviceStates(parsed.type).getDeviceState();
+		    			fragClients(modes);
+		    		}
 		    	}
 	    	}
 	    }

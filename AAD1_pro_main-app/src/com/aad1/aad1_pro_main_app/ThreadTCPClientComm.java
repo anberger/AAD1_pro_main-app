@@ -8,14 +8,9 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-
-import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v4.content.LocalBroadcastManager;
 
 public class ThreadTCPClientComm extends Thread {
 	public Socket SOCK = null;
@@ -65,6 +60,7 @@ public class ThreadTCPClientComm extends Thread {
         outHandler.sendMessage(msg);
     }
 	
+	// This Method sends a 
 	private void SendImage2Server(byte[] bmp){
 		Message msg = outHandler.obtainMessage(); 
         bundle.putByteArray("Image", bmp);        
@@ -102,6 +98,8 @@ public class ThreadTCPClientComm extends Thread {
 			    if(inputStream.available() > 0){
 				    	BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
 				        String inputLine;
+				        
+				        // Check if its a Video Client
 				        if(!this.video){
 					        while ((inputLine = in.readLine()) != null){
 								JsonParser parser = new JsonParser();
@@ -117,6 +115,8 @@ public class ThreadTCPClientComm extends Thread {
 							    }
 					        }
 				        }
+				        
+				        // If there is 
 				        else {
 				        	byte[] data;//String read = input.readLine();
 	                        int len= this.inputStream.readInt();                  
