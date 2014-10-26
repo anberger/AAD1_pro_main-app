@@ -78,6 +78,11 @@ public class ThreadTCPServer extends Thread {
         		if(bundle.containsKey("Object")){
         			MessageHandler(bundle.getString("Object"));
         		}
+        		if(bundle.containsKey("Image")){
+        	        Message message = mhandlerOutActivity.obtainMessage();   
+        	        message.setData(bundle);
+        	        mhandlerOutActivity.sendMessage(message);
+        		}
         	}
         	return false;
         } 

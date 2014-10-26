@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 public class ServiceTCP extends Service {
 
@@ -18,6 +19,7 @@ public class ServiceTCP extends Service {
     private String SERVERID = "";
     private boolean isAlreadyConnected = false;
     private Helper helper = new Helper();
+    private String TAG = "image";
     
     // These states indicates which device is online 
     private ArrayList<ClassDeviceState> devices = new ArrayList<ClassDeviceState>();
@@ -46,6 +48,9 @@ public class ServiceTCP extends Service {
 	        		// If the devices change his states then update the states in this service
 	        		devices = helper.updateDeviceState(message, devices);
 	        	}
+	        	if(bundle.containsKey("Image")){
+	        		sendImage2Activity(bundle);
+	        	}
         	}
         	return false;
         } 
@@ -56,6 +61,12 @@ public class ServiceTCP extends Service {
         intent.putExtra("Object", msg);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }    
+    
+    public void sendImage2Activity(Bundle b){
+    	Intent intent = new Intent("messages");
+        intent.putExtra("Image", b.getByteArray("Image"));
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
     
     public void send2Server(String message){
 		Message msg = mTCPServer.getHandler().obtainMessage(); 

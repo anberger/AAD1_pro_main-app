@@ -8,9 +8,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.provider.MediaStore.Images.Media;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -18,6 +23,7 @@ import android.view.View;
 import android.view.View.OnTouchListener;
 import android.view.WindowManager;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.MediaController;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
@@ -31,6 +37,7 @@ public class ActivityButtons extends Activity {
 	
 	private ImageButton btn_forward, btn_backward, btn_left, btn_right;
 	RelativeLayout layout_joystick;
+	ImageView img;
 	ClassJoyStick js;
 	
 	private int valForward = 0;
@@ -41,23 +48,7 @@ public class ActivityButtons extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_buttons);
-		VideoView vidView = (VideoView) findViewById(R.id.myVideo);
-		String vidAddress = "https://archive.org/download/ksnn_compilation_master_the_internet/ksnn_compilation_master_the_internet_512kb.mp4";
-		Uri vidUri = Uri.parse(vidAddress);
-		vidView.setVideoURI(vidUri);
-		MediaController vidControl = new MediaController(this);
-		vidControl.setAnchorView(vidView);
-		vidView.setMediaController(vidControl);
-		//vidView.start();
 
-
-		//loadPref();
-
-		// String CameraURL =
-		// "http://iris.not.iac.es/axis-cgi/mjpg/-eo.cgi?resolution=320x240"; //
-		// Public MJPEG Camera for test's
-
-		// requestWindowFeature(Window.FEATURE_NO_TITLE);
 		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
 				WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
@@ -224,14 +215,35 @@ public class ActivityButtons extends Activity {
 	private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
 	    @Override
 	    public void onReceive(Context context, Intent intent) {
-	    	if(intent.getExtras() != null){
-		    	if(intent.getExtras().containsKey("Object")){
+	    	Bundle b = intent.getExtras();
+	    	if(b != null){
+		    	if(b.containsKey("Object")){
 		    		ParserPackages parsed = helper.messageParser(intent.getStringExtra("Object"));
-		    		Toast.makeText(getApplicationContext(), parsed.origin + " send " + parsed.message, Toast.LENGTH_SHORT).show();
+		    		//Toast.makeText(getApplicationContext(), parsed.origin + " send " + parsed.message, Toast.LENGTH_SHORT).show();
+		    	}
+		    	
+		    	if(b.containsKey("Image")){
+		    		byte[] img = intent.getByteArrayExtra("Image");
+		    		setImage(img);
+		    		
+		    		
 		    	}
 	    	}
 	    }
 	};
+	
+	private void setImage(byte[] image){
+		
+	    Bitmap b = BitmapFactory.decodeByteArray(image,0,image.length);   
+	    
+		//img.setImageBitmap(b);
+		
+		Drawable dr = new BitmapDrawable(b);
+		RelativeLayout r;
+		r = (RelativeLayout) findViewById(R.id.layout);
+		r.setBackgroundDrawable(dr);
+		
+	}
 
 	
 	/*

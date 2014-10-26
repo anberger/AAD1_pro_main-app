@@ -9,14 +9,19 @@ import java.net.Socket;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.content.LocalBroadcastManager;
 
 public class ThreadTCPClientComm extends Thread {
 	public Socket SOCK = null;
 	public boolean connected = false;
 	public boolean firstTime = true;
+	private boolean video = false;
 	private DataOutputStream outputStream = null;
 	private DataInputStream inputStream = null;
 	private Helper helper = new Helper();
@@ -59,6 +64,13 @@ public class ThreadTCPClientComm extends Thread {
         msg.setData(bundle);
         outHandler.sendMessage(msg);
     }
+	
+	private void SendImage2Server(byte[] bmp){
+		Message msg = outHandler.obtainMessage(); 
+        bundle.putByteArray("Image", bmp);        
+        msg.setData(bundle);
+        outHandler.sendMessage(msg);
+	}
 
 	// Send Data to Client
 	public void Send2Client(JsonObject jObject){
@@ -90,11 +102,30 @@ public class ThreadTCPClientComm extends Thread {
 			    if(inputStream.available() > 0){
 				    	BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
 				        String inputLine;
-				        while ((inputLine = in.readLine()) != null){
-							JsonParser parser = new JsonParser();
-						    JsonObject jObject = parser.parse(inputLine).getAsJsonObject();
-						    Send2TCPServer(jObject);
-				        }			           
+				        if(!this.video){
+					        while ((inputLine = in.readLine()) != null){
+								JsonParser parser = new JsonParser();
+							    JsonObject jObject = parser.parse(inputLine).getAsJsonObject();
+							    
+							    Send2TCPServer(jObject);
+							    
+							    ParserPackages parsed = helper.messageParser(jObject.toString());
+							    
+							    if(parsed.type.equals("video")){
+							    	this.video = true;
+							    	break;
+							    }
+					        }
+				        }
+				        else {
+				        	byte[] data;//String read = input.readLine();
+	                        int len= this.inputStream.readInt();                  
+	                        data = new byte[len];                   
+	                        if (len > 0) {
+	                            this.inputStream.readFully(data,0,data.length);
+	                            SendImage2Server(data);
+	                        }   
+				        }
 			    }
 				
 				// Check connection

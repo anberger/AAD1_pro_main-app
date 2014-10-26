@@ -69,7 +69,7 @@ public class ActivityTCPConnector extends FragmentActivity implements FragmentSt
 		    			}
 		    		}	
 		    		Log.d(TAG,parsed.message);
-		    		Toast.makeText(getApplicationContext(), parsed.origin + " send " + parsed.message, Toast.LENGTH_SHORT).show();
+		    		//Toast.makeText(getApplicationContext(), parsed.origin + " send " + parsed.message, Toast.LENGTH_SHORT).show();
 		    	}
 	    	}
 	    }
